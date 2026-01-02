@@ -16,7 +16,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.56.13
 	github.com/aws/smithy-go v1.27.3
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/cloudflare/circl v1.3.7
+	github.com/cloudflare/circl v1.6.2
 	github.com/containerd/errdefs v1.0.0
 	github.com/containous/alice v0.0.0-20181107144136-d83ebdd94cbd // No tag on the repo.
 	github.com/coreos/go-systemd/v22 v22.7.0
@@ -54,7 +54,7 @@ require (
 	github.com/moby/moby/client v0.4.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pires/go-proxyproto v0.12.0
-	github.com/pkg/errors v0.9.1
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // No tag on the repo.
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
