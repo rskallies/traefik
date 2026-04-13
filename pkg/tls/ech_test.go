@@ -231,6 +231,28 @@ func TestUnmarshalECHKey_Errors(t *testing.T) {
 				return pemData
 			}(),
 		},
+		{
+			desc: "private key too long",
+			data: func() []byte {
+				var pemData []byte
+				pemData = append(pemData, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: make([]byte, 64)})...)
+				configBytes := append([]byte{0, 4}, []byte("test")...)
+				pemData = append(pemData, pem.EncodeToMemory(&pem.Block{Type: "ECHCONFIG", Bytes: configBytes})...)
+				return pemData
+			}(),
+		},
+		{
+			desc: "ECH config block too short for length prefix",
+			data: pem.EncodeToMemory(&pem.Block{Type: "ECHCONFIG", Bytes: []byte{0x00}}),
+		},
+		{
+			desc: "ECH config length prefix mismatch",
+			data: func() []byte {
+				// Length prefix says 10 bytes but content is only 4
+				configBytes := append([]byte{0, 10}, []byte("test")...)
+				return pem.EncodeToMemory(&pem.Block{Type: "ECHCONFIG", Bytes: configBytes})
+			}(),
+		},
 	}
 
 	for _, test := range testCases {
