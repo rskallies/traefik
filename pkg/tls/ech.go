@@ -1,12 +1,12 @@
 package tls
 
 import (
+	"crypto/rand"
 	"crypto/tls"
 	"encoding/binary"
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"math/rand/v2"
 
 	"github.com/cloudflare/circl/hpke"
 	"golang.org/x/crypto/cryptobyte"
@@ -111,7 +111,13 @@ func NewECHKey(publicName string) (*tls.EncryptedClientHelloKey, error) {
 
 	config := echConfig{
 		Version:  0xfe0d, // ECH version 0xfe0d
-		ConfigID: uint8(rand.Uint()),
+		ConfigID: func() uint8 {
+			var b [1]byte
+			if _, err := rand.Read(b[:]); err != nil {
+				panic("crypto/rand unavailable: " + err.Error())
+			}
+			return b[0]
+		}(),
 		KemID:     uint16(hpke.KEM_X25519_HKDF_SHA256),
 		PublicKey: publicKeyBytes,
 		SymmetricCipherSuite: []echCipher{
