@@ -3,8 +3,10 @@
 package ech
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/traefik/traefik/v3/pkg/tls"
 )
@@ -38,4 +40,26 @@ func GenerateMultiple(w io.Writer, publicNames []string) error {
 		}
 	}
 	return nil
+}
+
+// ExportConfigList reads an ECH PEM file and writes the base64-encoded
+// ECHConfigList to w, suitable for use in DNS HTTPS records (ech= parameter).
+func ExportConfigList(w io.Writer, pemFile string) error {
+	data, err := os.ReadFile(pemFile)
+	if err != nil {
+		return fmt.Errorf("failed to read PEM file: %w", err)
+	}
+
+	key, err := tls.UnmarshalECHKey(data)
+	if err != nil {
+		return fmt.Errorf("failed to parse ECH key: %w", err)
+	}
+
+	configList, err := tls.ECHConfigToConfigList(key.Config)
+	if err != nil {
+		return fmt.Errorf("failed to build ECH config list: %w", err)
+	}
+
+	_, err = fmt.Fprintln(w, base64.StdEncoding.EncodeToString(configList))
+	return err
 }
