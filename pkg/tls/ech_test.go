@@ -102,6 +102,21 @@ func TestNewECHKey(t *testing.T) {
 			publicName:  "abcdefghijklmnopqrstuvwxyz0123456", // 33 chars
 			expectError: true,
 		},
+		{
+			desc:        "empty public name",
+			publicName:  "",
+			expectError: true,
+		},
+		{
+			desc:        "invalid hostname with spaces",
+			publicName:  "invalid hostname",
+			expectError: true,
+		},
+		{
+			desc:        "invalid hostname with null byte",
+			publicName:  "evil\x00.com",
+			expectError: true,
+		},
 	}
 
 	for _, test := range testCases {
