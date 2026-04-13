@@ -27,7 +27,14 @@ func UnmarshalECHKey(data []byte) (*tls.EncryptedClientHelloKey, error) {
 		case "PRIVATE KEY":
 			k.PrivateKey = block.Bytes
 		case "ECHCONFIG":
-			k.Config = block.Bytes[2:] // Skip the first two bytes (length prefix)
+			if len(block.Bytes) < 2 {
+				return nil, errors.New("ECH configuration block is too short to contain a length prefix")
+			}
+			prefixedLen := int(binary.BigEndian.Uint16(block.Bytes[:2]))
+			if prefixedLen != len(block.Bytes)-2 {
+				return nil, fmt.Errorf("ECH configuration length prefix %d does not match actual content length %d", prefixedLen, len(block.Bytes)-2)
+			}
+			k.Config = block.Bytes[2:]
 		default:
 			return nil, fmt.Errorf("unknown PEM block %s", block.Type)
 		}
@@ -43,7 +50,7 @@ func UnmarshalECHKey(data []byte) (*tls.EncryptedClientHelloKey, error) {
 	if len(k.PrivateKey) < sha256PrivateKeyLength {
 		return nil, fmt.Errorf("invalid private key length: expected at least %d bytes, got %d bytes", sha256PrivateKeyLength, len(k.PrivateKey))
 	} else if len(k.PrivateKey) > sha256PrivateKeyLength {
-		k.PrivateKey = k.PrivateKey[len(k.PrivateKey)-sha256PrivateKeyLength:]
+		return nil, fmt.Errorf("invalid private key length: expected %d bytes, got %d bytes", sha256PrivateKeyLength, len(k.PrivateKey))
 	}
 
 	k.SendAsRetry = true
@@ -77,7 +84,6 @@ type echExtension struct {
 
 type echConfig struct {
 	Version uint16
-	Length  uint16
 
 	ConfigID             uint8
 	KemID                uint16
@@ -104,9 +110,8 @@ func NewECHKey(publicName string) (*tls.EncryptedClientHelloKey, error) {
 	}
 
 	config := echConfig{
-		Version:   0xfe0d, // ECH version 0xfe0d
-		Length:    0x0000,
-		ConfigID:  uint8(rand.Uint()),
+		Version:  0xfe0d, // ECH version 0xfe0d
+		ConfigID: uint8(rand.Uint()),
 		KemID:     uint16(hpke.KEM_X25519_HKDF_SHA256),
 		PublicKey: publicKeyBytes,
 		SymmetricCipherSuite: []echCipher{
