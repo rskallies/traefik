@@ -10,6 +10,7 @@ import (
 
 	"github.com/cloudflare/circl/hpke"
 	"golang.org/x/crypto/cryptobyte"
+	"golang.org/x/net/idna"
 )
 
 // sha256PrivateKeyLength is the required private key length for SHA-256 based ECDH.
@@ -96,6 +97,13 @@ type echConfig struct {
 }
 
 func NewECHKey(publicName string) (*tls.EncryptedClientHelloKey, error) {
+	if publicName == "" {
+		return nil, errors.New("ECH public name must not be empty")
+	}
+	if _, err := idna.Lookup.ToASCII(publicName); err != nil {
+		return nil, fmt.Errorf("invalid ECH public name %q: %w", publicName, err)
+	}
+
 	publicKey, privateKey, err := hpke.KEM_X25519_HKDF_SHA256.Scheme().GenerateKeyPair()
 	if err != nil {
 		return nil, err
