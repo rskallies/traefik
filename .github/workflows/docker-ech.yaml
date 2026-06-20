@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
 
       - name: Set up Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v5
@@ -69,6 +71,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
 
       - name: Set up Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v5
