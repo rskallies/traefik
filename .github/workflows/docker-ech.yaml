@@ -39,6 +39,9 @@ jobs:
           tar xvf webui.tar.gz
           rm webui.tar.gz
 
+      - name: Tidy modules
+        run: go mod tidy
+
       - name: Build binary
         env:
           GOOS: linux
