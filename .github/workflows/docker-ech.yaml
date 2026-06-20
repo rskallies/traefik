@@ -2,8 +2,8 @@ name: Build ECH Docker Image
 
 on:
   push:
-    branches:
-      - ech-pr11866
+    tags:
+      - 'v*-ech.*'
   workflow_dispatch:
 
 env:
