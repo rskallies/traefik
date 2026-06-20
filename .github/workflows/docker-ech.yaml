@@ -2,11 +2,12 @@ name: Build ECH Docker Image
 
 on:
   push:
-    branches:
-      - ech-pr11866
+    tags:
+      - 'v*-ech.*'
+  workflow_dispatch:
 
 env:
-  GO_VERSION: '1.24'
+  GO_VERSION: '1.26'
   CGO_ENABLED: 0
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/traefik
