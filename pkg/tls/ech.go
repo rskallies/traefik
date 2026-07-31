@@ -118,7 +118,7 @@ func NewECHKey(publicName string) (*tls.EncryptedClientHelloKey, error) {
 	}
 
 	config := echConfig{
-		Version:  0xfe0d, // ECH version 0xfe0d
+		Version: 0xfe0d, // ECH version 0xfe0d
 		ConfigID: func() uint8 {
 			var b [1]byte
 			if _, err := rand.Read(b[:]); err != nil {
