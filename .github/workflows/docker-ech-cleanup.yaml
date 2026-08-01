@@ -1,0 +1,25 @@
+name: Clean Up ECH Docker Image Versions
+
+on:
+  schedule:
+    - cron: '0 3 * * 0' # Every Sunday at 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Delete old untagged versions
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
+        with:
+          owner: ${{ github.repository_owner }}
+          package-name: traefik
+          package-type: container
+          min-versions-to-keep: 10
+          # Never touch a version that still has a tag pointing at it (floating
+          # ech-pr11866 or any ech-pr11866-vX.Y.Z-ech.N pin) — only prunes
+          # genuinely orphaned/dangling manifests.
+          delete-only-untagged-versions: true
