@@ -70,10 +70,13 @@ func newHTTP3Server(ctx context.Context, name string, config *static.EntryPoint,
 	}
 
 	h3.Server = &http3.Server{
-		Addr:           config.GetAddress(),
-		Port:           config.HTTP3.AdvertisedPort,
-		Handler:        handler,
-		TLSConfig:      &tls.Config{GetConfigForClient: h3.getTLSConfigForClient},
+		Addr:    config.GetAddress(),
+		Port:    config.HTTP3.AdvertisedPort,
+		Handler: handler,
+		TLSConfig: &tls.Config{
+			GetConfigForClient:          h3.getTLSConfigForClient,
+			GetEncryptedClientHelloKeys: h3.getECHKeysForClient,
+		},
 		MaxHeaderBytes: config.HTTP.MaxHeaderBytes,
 		IdleTimeout:    time.Duration(config.Transport.RespondingTimeouts.IdleTimeout),
 		QUICConfig: &quic.Config{
@@ -142,13 +145,31 @@ func (e *http3server) getTLSConfigForClient(info *tls.ClientHelloInfo) (*tls.Con
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
-	connData, err := tcpmuxer.NewConnData(info.ServerName, info.Conn.RemoteAddr(), info.SupportedProtos)
+	// Before Go 1.27, quic-go only sets Conn for the GetConfigForClient and GetCertificate callbacks,
+	// so it is nil when called from getECHKeysForClient.
+	remoteAddr := net.Addr(&net.UDPAddr{})
+	if info.Conn != nil {
+		remoteAddr = info.Conn.RemoteAddr()
+	}
+
+	connData, err := tcpmuxer.NewConnData(info.ServerName, remoteAddr, info.SupportedProtos)
 	if err != nil {
 		return nil, fmt.Errorf("creating ConnData from client hello: %w", err)
 	}
 
 	conf, _, err := e.getter(connData)
 	return conf, err
+}
+
+// getECHKeysForClient is needed because crypto/tls decrypts the ECH inner ClientHello using the keys of the
+// initial config, before GetConfigForClient swaps in the per-client config holding the configured ECH keys.
+func (e *http3server) getECHKeysForClient(info *tls.ClientHelloInfo) ([]tls.EncryptedClientHelloKey, error) {
+	conf, err := e.getTLSConfigForClient(info)
+	if err != nil || conf == nil {
+		return nil, err
+	}
+
+	return conf.EncryptedClientHelloKeys, nil
 }
 
 func (e *http3server) getTLSOptionsName(c *quic.Conn) (string, error) {
